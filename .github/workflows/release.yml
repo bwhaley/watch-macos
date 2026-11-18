@@ -1,0 +1,37 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: make lint test
+      - id: version
+        run: scripts/next-version.sh >> "$GITHUB_OUTPUT"
+      - if: steps.version.outputs.version != ''
+        run: make dist VERSION=${{ steps.version.outputs.version }}
+      - if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: >
+          gh release create "$VERSION" dist/*
+          --target "$GITHUB_SHA"
+          --title "$VERSION"
+          --generate-notes
