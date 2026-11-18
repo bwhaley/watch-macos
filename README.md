@@ -10,6 +10,18 @@ watch -g 'curl -s https://example.com/status'
 
 ## Install
 
+Each release has a tarball for Apple silicon (`darwin_arm64`) and Intel (`darwin_amd64`), and a `checksums.txt`.
+
+```sh
+gh release download -R bwhaley/watch-macos -p '*darwin_arm64.tar.gz'
+tar -xzf watch_*_darwin_arm64.tar.gz
+install -m 0755 watch_*_darwin_arm64/watch /usr/local/bin/watch
+```
+
+The binary is not signed. If you download it with a browser, macOS quarantines it. `xattr -d com.apple.quarantine /usr/local/bin/watch` clears that.
+
+With Go:
+
 ```sh
 go install github.com/bwhaley/watch-macos/cmd/watch@latest
 ```
@@ -61,3 +73,13 @@ Press `q` or `Ctrl-C` to quit, and `space` to run the command now.
 ```sh
 make lint test
 ```
+
+## Releases
+
+Every push to `main` publishes a GitHub release, from `.github/workflows/release.yml`. `scripts/next-version.sh` picks the version from the conventional commit messages since the last `v*` tag:
+
+- `feat:` bumps the minor version.
+- `type!:` or a `BREAKING CHANGE:` footer bumps the major version.
+- Anything else bumps the patch version.
+
+With squash merges, the PR title is the commit message, so the PR title decides the bump.
